@@ -60,7 +60,30 @@ public class MainActivity extends Activity {
                 }
                 filePathCallback = callback;
                 try {
-                    Intent intent = params.createIntent();
+                    Intent intent;
+                    String[] types = params.getAcceptTypes();
+                    boolean imageOnly = types != null && types.length > 0;
+                    if (imageOnly) {
+                        for (String t : types) {
+                            if (t == null || !t.startsWith("image/")) {
+                                imageOnly = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (imageOnly) {
+                        // photo / GIF pickers: keep the normal behaviour
+                        intent = params.createIntent();
+                    } else {
+                        // backup (.json) and CSV imports: no type filter, so every
+                        // file stays selectable whatever mime type it was saved with
+                        intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
+                        if (params.getMode() == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                        }
+                    }
                     startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
                 } catch (Exception e) {
                     filePathCallback = null;
